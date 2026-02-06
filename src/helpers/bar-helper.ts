@@ -158,7 +158,7 @@ const convertToBar = (
     x1 = taskXCoordinateRTL(task.end, dates, columnWidth);
   } else {
     x1 = taskXCoordinate(task.start, dates, columnWidth);
-    x2 = taskXCoordinate(task.end, dates, columnWidth);
+    x2 = taskXCoordinate(task.end, dates, columnWidth, true);
   }
   let typeInternal: TaskTypeInternal = task.type;
   if (typeInternal === "task" && x2 - x1 < handleWidth * 2) {
@@ -246,21 +246,32 @@ const convertToMilestone = (
   };
 };
 
-const taskXCoordinate = (xDate: Date, dates: Date[], columnWidth: number) => {
+// Added isEnd fals to change the bar width only for the end cordinate
+const taskXCoordinate = (
+  xDate: Date,
+  dates: Date[],
+  columnWidth: number,
+  isEnd = false
+) => {
   const index = dates.findIndex(d => d.getTime() >= xDate.getTime()) - 1;
 
   const remainderMillis = xDate.getTime() - dates[index].getTime();
   const percentOfInterval =
     remainderMillis / (dates[index + 1].getTime() - dates[index].getTime());
-  const x = index * columnWidth + percentOfInterval * columnWidth;
+  let x = index * columnWidth + percentOfInterval * columnWidth;
+  // If mapping x draw to an extra column to the right
+  if (isEnd) {
+    x += columnWidth;
+  }
   return x;
 };
 const taskXCoordinateRTL = (
   xDate: Date,
   dates: Date[],
-  columnWidth: number
+  columnWidth: number,
+  isEnd = false
 ) => {
-  let x = taskXCoordinate(xDate, dates, columnWidth);
+  let x = taskXCoordinate(xDate, dates, columnWidth, isEnd);
   x += columnWidth;
   return x;
 };
