@@ -35,8 +35,8 @@ export const TaskItem: React.FC<TaskItemProps> = props => {
   } = {
     ...props,
   };
-  const textRef = useRef<SVGTextElement>(null);
-  const [taskItem, setTaskItem] = useState<JSX.Element>(<div />);
+  const textRef = useRef<SVGTextElement | null>(null);
+  const [taskItem, setTaskItem] = useState<React.ReactElement>(<div />);
   const [isTextInside, setIsTextInside] = useState(true);
 
   useEffect(() => {
@@ -54,7 +54,7 @@ export const TaskItem: React.FC<TaskItemProps> = props => {
         setTaskItem(<Bar {...props} />);
         break;
     }
-  }, [task, isSelected]);
+  }, [task, isSelected, props]);
 
   useEffect(() => {
     if (textRef.current) {

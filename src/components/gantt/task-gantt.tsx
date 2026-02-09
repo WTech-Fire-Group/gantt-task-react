@@ -20,9 +20,9 @@ export const TaskGantt: React.FC<TaskGanttProps> = ({
   scrollY,
   scrollX,
 }) => {
-  const ganttSVGRef = useRef<SVGSVGElement>(null);
-  const horizontalContainerRef = useRef<HTMLDivElement>(null);
-  const verticalGanttContainerRef = useRef<HTMLDivElement>(null);
+  const ganttSVGRef = useRef<SVGSVGElement>(null as any);
+  const horizontalContainerRef = useRef<HTMLDivElement | null>(null);
+  const verticalGanttContainerRef = useRef<HTMLDivElement | null>(null);
   const newBarProps = { ...barProps, svg: ganttSVGRef };
 
   useEffect(() => {

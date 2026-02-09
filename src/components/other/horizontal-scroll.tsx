@@ -6,7 +6,7 @@ export const HorizontalScroll: React.FC<{
   svgWidth: number;
   taskListWidth: number;
   rtl: boolean;
-  onScroll: (event: SyntheticEvent<HTMLDivElement>) => void;
+  onScroll: (event: SyntheticEvent<HTMLDivElement | null>) => void;
 }> = ({ scroll, svgWidth, taskListWidth, rtl, onScroll }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
 

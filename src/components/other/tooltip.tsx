@@ -38,7 +38,7 @@ export const Tooltip: React.FC<TooltipProps> = ({
   taskListWidth,
   TooltipContent,
 }) => {
-  const tooltipRef = useRef<HTMLDivElement | null>(null);
+  const tooltipRef = useRef<HTMLDivElement>(null);
   const [relatedY, setRelatedY] = useState(0);
   const [relatedX, setRelatedX] = useState(0);
   useEffect(() => {

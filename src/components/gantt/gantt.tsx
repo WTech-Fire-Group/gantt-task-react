@@ -300,7 +300,7 @@ export const Gantt: React.FunctionComponent<GanttProps> = ({
     ganttFullHeight,
   ]);
 
-  const handleScrollY = (event: SyntheticEvent<HTMLDivElement>) => {
+  const handleScrollY = (event: SyntheticEvent<HTMLDivElement | null>) => {
     if (scrollY !== event.currentTarget.scrollTop && !ignoreScrollEvent) {
       setScrollY(event.currentTarget.scrollTop);
       setIgnoreScrollEvent(true);
@@ -309,7 +309,7 @@ export const Gantt: React.FunctionComponent<GanttProps> = ({
     }
   };
 
-  const handleScrollX = (event: SyntheticEvent<HTMLDivElement>) => {
+  const handleScrollX = (event: SyntheticEvent<HTMLDivElement | null>) => {
     if (scrollX !== event.currentTarget.scrollLeft && !ignoreScrollEvent) {
       setScrollX(event.currentTarget.scrollLeft);
       setIgnoreScrollEvent(true);
@@ -321,7 +321,7 @@ export const Gantt: React.FunctionComponent<GanttProps> = ({
   /**
    * Handles arrow keys events and transform it to new scroll
    */
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement | null>) => {
     event.preventDefault();
     let newScrollY = scrollY;
     let newScrollX = scrollX;

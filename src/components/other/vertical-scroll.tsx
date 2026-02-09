@@ -7,7 +7,7 @@ export const VerticalScroll: React.FC<{
   ganttFullHeight: number;
   headerHeight: number;
   rtl: boolean;
-  onScroll: (event: SyntheticEvent<HTMLDivElement>) => void;
+  onScroll: (event: SyntheticEvent<HTMLDivElement | null>) => void;
 }> = ({
   scroll,
   ganttHeight,
