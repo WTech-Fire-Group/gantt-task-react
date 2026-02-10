@@ -1,8 +1,12 @@
-import React, { useEffect, useState } from "react";
-import { EventOption } from "../../types/public-types";
+import React, { useCallback, useEffect, useState } from "react";
+import { EventOption, Task } from "../../types/public-types";
 import { BarTask } from "../../types/bar-task";
 import { Arrow } from "../other/arrow";
-import { handleTaskBySVGMouseEvent } from "../../helpers/bar-helper";
+import { taskXCoordinate } from "../../helpers/bar-helper";
+import {
+  handleTaskBySVGMouseEvent,
+  progressWithByParams,
+} from "../../helpers/bar-helper";
 import { isKeyboardEvent } from "../../helpers/other-helper";
 import { TaskItem } from "../task-item/task-item";
 import {
@@ -61,6 +65,54 @@ export const TaskGanttContent: React.FC<TaskGanttContentProps> = ({
   const [initEventX1Delta, setInitEventX1Delta] = useState(0);
   const [isMoving, setIsMoving] = useState(false);
 
+  const moveDependents = useCallback(
+    (
+      root: BarTask,
+      deltaMs: number,
+      tasks: BarTask[],
+      rtl: boolean
+    ): BarTask[] => {
+      const updated = new Map<string, BarTask>();
+
+      const dfs = (task: BarTask) => {
+        task.barChildren.forEach(child => {
+          const dep = tasks[child.index];
+          if (updated.has(dep.id)) return;
+
+          const movedStart = new Date(dep.start.getTime() + deltaMs);
+          const movedEnd = new Date(dep.end.getTime() + deltaMs);
+
+          const x1 = taskXCoordinate(movedStart, dates, columnWidth);
+          const x2 = taskXCoordinate(movedEnd, dates, columnWidth, true);
+
+          const [progressWidth, progressX] = progressWithByParams(
+            x1,
+            x2,
+            dep.progress,
+            rtl
+          );
+
+          const moved: BarTask = {
+            ...dep,
+            start: movedStart,
+            end: movedEnd,
+            x1,
+            x2,
+            progressWidth,
+            progressX,
+          };
+
+          updated.set(dep.id, moved);
+          dfs(moved);
+        });
+      };
+
+      dfs(root);
+      return Array.from(updated.values());
+    },
+    [dates, columnWidth]
+  );
+
   // create xStep
   useEffect(() => {
     const dateDelta =
@@ -91,9 +143,18 @@ export const TaskGanttContent: React.FC<TaskGanttContentProps> = ({
         initEventX1Delta,
         rtl
       );
-      if (isChanged) {
-        setGanttEvent({ action: ganttEvent.action, changedTask });
-      }
+      const deltaMs =
+        changedTask.end.getTime() - ganttEvent.changedTask.end.getTime();
+
+      const dependentTasks = moveDependents(changedTask, deltaMs, tasks, rtl);
+
+      if (!isChanged) return;
+
+      setGanttEvent({
+        action: ganttEvent.action,
+        changedTask,
+        dependentTasks,
+      });
     };
 
     const handleMouseUp = async (event: MouseEvent) => {
@@ -115,6 +176,14 @@ export const TaskGanttContent: React.FC<TaskGanttContentProps> = ({
         initEventX1Delta,
         rtl
       );
+      const deltaMs =
+        newChangedTask.end.getTime() - originalSelectedTask.end.getTime();
+      const finalDependentTasks = moveDependents(
+        newChangedTask,
+        deltaMs,
+        tasks,
+        rtl
+      );
 
       const isNotLikeOriginal =
         originalSelectedTask.start !== newChangedTask.start ||
@@ -124,20 +193,41 @@ export const TaskGanttContent: React.FC<TaskGanttContentProps> = ({
       // remove listeners
       svg.current.removeEventListener("mousemove", handleMouseMove);
       svg.current.removeEventListener("mouseup", handleMouseUp);
-      setGanttEvent({ action: "" });
+
+      setGanttEvent({
+        action,
+        changedTask: newChangedTask,
+        dependentTasks: finalDependentTasks,
+      });
       setIsMoving(false);
+      setGanttEvent({ action: "" });
 
       // custom operation start
       let operationSuccess = true;
+
       if (
         (action === "move" || action === "end" || action === "start") &&
         onDateChange &&
         isNotLikeOriginal
       ) {
+        // convert BarTask to Task for public methods
+        const toTask = (bar: BarTask): Task => ({
+          id: bar.id,
+          name: bar.name,
+          start: bar.start,
+          end: bar.end,
+          progress: bar.progress,
+          type: bar.type,
+          dependencies: bar.dependencies,
+          styles: bar.styles,
+        });
         try {
+          // Pass changed task, it's children and dependent tasks to onDateChange callback.
+          // If onDateChange returns false or throws error - return task to original position
           const result = await onDateChange(
-            newChangedTask,
-            newChangedTask.barChildren
+            toTask(newChangedTask),
+            newChangedTask.barChildren.map(toTask),
+            finalDependentTasks.map(toTask)
           );
           if (result !== undefined) {
             operationSuccess = result;
@@ -190,6 +280,8 @@ export const TaskGanttContent: React.FC<TaskGanttContentProps> = ({
     rtl,
     setFailedTask,
     setGanttEvent,
+    tasks,
+    moveDependents,
   ]);
 
   /**

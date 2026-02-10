@@ -247,7 +247,7 @@ const convertToMilestone = (
 };
 
 // Added isEnd fals to change the bar width only for the end cordinate
-const taskXCoordinate = (
+export const taskXCoordinate = (
   xDate: Date,
   dates: Date[],
   columnWidth: number,
@@ -436,7 +436,11 @@ const handleTaskBySVGMouseEventForBar = (
   timeStep: number,
   initEventX1Delta: number,
   rtl: boolean
-): { isChanged: boolean; changedTask: BarTask } => {
+): {
+  isChanged: boolean;
+  changedTask: BarTask;
+  delta?: { startMs: number };
+} => {
   const changedTask: BarTask = { ...selectedTask };
   let isChanged = false;
   switch (action) {
@@ -556,6 +560,14 @@ const handleTaskBySVGMouseEventForBar = (
         );
         changedTask.progressWidth = progressWidth;
         changedTask.progressX = progressX;
+
+        return {
+          isChanged,
+          changedTask,
+          delta: {
+            startMs: changedTask.start.getTime() - selectedTask.start.getTime(),
+          },
+        };
       }
       break;
     }

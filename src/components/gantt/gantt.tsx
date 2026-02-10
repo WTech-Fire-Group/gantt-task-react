@@ -196,33 +196,54 @@ export const Gantt: React.FunctionComponent<GanttProps> = ({
   ]);
 
   useEffect(() => {
-    const { changedTask, action } = ganttEvent;
-    if (changedTask) {
-      if (action === "delete") {
-        setGanttEvent({ action: "" });
-        setBarTasks(barTasks.filter(t => t.id !== changedTask.id));
-      } else if (
-        action === "move" ||
-        action === "end" ||
-        action === "start" ||
-        action === "progress"
-      ) {
-        const prevStateTask = barTasks.find(t => t.id === changedTask.id);
-        if (
-          prevStateTask &&
-          (prevStateTask.start.getTime() !== changedTask.start.getTime() ||
-            prevStateTask.end.getTime() !== changedTask.end.getTime() ||
-            prevStateTask.progress !== changedTask.progress)
-        ) {
-          // actions for change
-          const newTaskList = barTasks.map(t =>
-            t.id === changedTask.id ? changedTask : t
-          );
-          setBarTasks(newTaskList);
-        }
-      }
+    const { changedTask, action, dependentTasks } = ganttEvent;
+    if (!changedTask) return;
+
+    if (action === "delete") {
+      setGanttEvent({ action: "" });
+      setBarTasks(prev => prev.filter(t => t.id !== changedTask.id));
+      return;
     }
-  }, [ganttEvent, barTasks]);
+
+    if (
+      action === "move" ||
+      action === "end" ||
+      action === "start" ||
+      action === "progress"
+    ) {
+      setBarTasks(prev => {
+        const prevStateTask = prev.find(t => t.id === changedTask.id);
+        const hasDependentChanges =
+          dependentTasks?.some(dep => {
+            const prevDep = prev.find(t => t.id === dep.id);
+            return (
+              !prevDep ||
+              prevDep.start.getTime() !== dep.start.getTime() ||
+              prevDep.end.getTime() !== dep.end.getTime()
+            );
+          }) ?? false;
+
+        if (
+          !prevStateTask ||
+          (prevStateTask.start.getTime() === changedTask.start.getTime() &&
+            prevStateTask.end.getTime() === changedTask.end.getTime() &&
+            prevStateTask.progress === changedTask.progress &&
+            !hasDependentChanges)
+        ) {
+          return prev;
+        }
+
+        const updatedMap = new Map<string, BarTask>();
+        updatedMap.set(changedTask.id, changedTask);
+
+        dependentTasks?.forEach(t => {
+          updatedMap.set(t.id, t);
+        });
+
+        return prev.map(t => updatedMap.get(t.id) ?? t);
+      });
+    }
+  }, [ganttEvent, setGanttEvent]);
 
   useEffect(() => {
     if (failedTask) {

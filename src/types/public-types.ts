@@ -55,7 +55,8 @@ export interface EventOption {
    */
   onDateChange?: (
     task: Task,
-    children: Task[]
+    children: Task[],
+    dependentTasks: Task[]
   ) => void | boolean | Promise<void> | Promise<boolean>;
   /**
    * Invokes on progress change. Chart undoes operation if method return false or error.
